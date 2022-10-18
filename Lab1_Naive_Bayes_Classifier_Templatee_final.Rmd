@@ -1,0 +1,189 @@
+---
+editor_options:
+  markdown:
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Probability and Statistics
+
+# Lab Assignment 1: Naive Bayes Classifier
+
+### *Anastasiia Shvets, Anastasiia Beheni, Nazarii Peniaha*
+
+## Introduction
+
+During the past three weeks, we learned a couple of essential notions
+and theorems, and one of the most important among them is the *Bayes
+theorem*.
+
+One of its applications is **Naive Bayes classifier**, which is a
+probabilistic classifier whose aim is to determine which class some
+observation probably belongs to by using the Bayes formula:
+$$\mathsf{P}(\mathrm{class}\mid \mathrm{observation})=\frac{\mathsf{P}(\mathrm{observation}\mid\mathrm{class})\mathsf{P}(\mathrm{class})}{\mathsf{P}(\mathrm{observation})}$$
+
+Under the strong independence assumption, one can calculate
+$\mathsf{P}(\mathrm{observation} \mid \mathrm{class})$ as
+$$\mathsf{P}(\mathrm{observation}) = \prod_{i=1}^{n} \mathsf{P}(\mathrm{feature}_i), \qquad \mathsf{P}(\mathrm{observation} \mid \mathrm{class}) = \prod_{i=1}^{n} \mathsf{P}(\mathrm{feature}_i \mid \mathrm{class}),$$
+where $n$ is the total number of features describing a given
+observation. Thus, $\mathsf{P}(\mathrm{class}|\mathrm{observation})$ now
+can be calculated as
+
+$$\mathsf{P}(\mathrm{class} \mid \mathrm{\mathrm{observation}}) = \mathsf{P}(\mathrm{class})\times \prod_{i=1}^{n}\frac{\mathsf{P}(\mathrm{feature}_i\mid \mathrm{class})}{\mathsf{P}(\mathrm{feature}_i)}\tag{1}$$
+
+## Data description
+
+-   **0 - authors** This data set consists of citations of three famous
+    writers: Edgar Alan Poe, Mary Wollstonecraft Shelley and HP
+    Lovecraft. The task with this data set is to classify a piece of
+    text with the author who was more likely to write it.
+
+
+```{r}
+# here goes a list of recommended libraries,
+# though you may install other ones if they are needed
+library(tidytext)
+library(readr)
+library(dplyr)
+library(ggplot2)
+```
+
+```{r}
+# list.files(getwd())
+list.files("data/0-authors")
+```
+
+```{r}
+test_path <- "data/0-authors/test.csv"
+train_path <- "data/0-authors/train.csv"
+
+stop_words <- read_file("stop_words.txt")
+# https://stackoverflow.com/questions/27195912/why-does-strsplit-return-a-list
+splitted_stop_words <- strsplit(stop_words, split='\n')
+splitted_stop_words <- splitted_stop_words[[1]]
+```
+
+```{r}
+train <-  read.csv(file = train_path, stringsAsFactors = FALSE)
+test <-  read.csv(file = test_path, stringsAsFactors = FALSE)
+```
+
+```{r}
+# note the power functional features of R bring us! 
+tidy_text <- unnest_tokens(train, 'splitted', 'text', token="words") %>%
+             filter(!splitted %in% stop_words)
+
+counter <- tidy_text %>% count(splitted,sort=TRUE)
+
+#some other data pre-processing
+
+lovecraft <- subset(tidy_text, author == "HP Lovecraft") %>% count(splitted, sort = TRUE)
+poe <- subset(tidy_text, author == "Edgar Alan Poe") %>% count(splitted, sort = TRUE)
+mary <- subset(tidy_text, author == "Mary Wollstonecraft Shelley ") %>% count(splitted, sort = TRUE)
+
+counter <- merge(counter, lovecraft, by = "splitted", all = TRUE)
+counter <- merge(counter, poe, by = "splitted", all = TRUE)
+counter <- merge(counter, mary, by = "splitted", all = TRUE)
+
+colnames(counter)[1] = "word"
+colnames(counter)[2] = "total"
+colnames(counter)[3] = "Lovecraft"
+colnames(counter)[4] = "Poe"
+colnames(counter)[5] = "Shelley"
+counter[is.na(counter)]<-0
+
+
+```
+
+## Classifier implementation
+
+```{r}
+naiveBayes <- setRefClass("naiveBayes",
+       fields = list(),
+       methods = list(
+                    fit = function(X, y){
+                      total_author_amount_vector <<- c(sum(counter$Lovecraft), sum(counter$Poe), sum(counter$Shelley))
+                      total_amount_of_unique_words <<- nrow(counter)
+                      total_amount_of_unique_words
+                      
+                      counter$Prob_word_given_Lovecraft <<- with(counter, (Lovecraft+1)/(total_author_amount_vector[1]+total_amount_of_unique_words))
+                      counter$Prob_word_given_Poe <<- with(counter, (Poe+1)/(total_author_amount_vector[2]+total_amount_of_unique_words))
+                      counter$Prob__word_given_Shelley <<- with(counter, (Shelley+1)/(total_author_amount_vector[3]+total_amount_of_unique_words))
+            
+                      total_amount_of_words <<- sum(counter$total)
+          
+                      prob_author_vector <<- c(total_author_amount_vector/total_amount_of_words)
+                      },
+                    
+                    predict = function(message){
+                      message <- strsplit(message, " ")[[1]]
+                      message_data <- data_frame(text = message)
+                      new_splitted_mes <- unnest_tokens(message_data, 'text', 'text', token="words") %>% 
+                                      filter(!text %in% splitted_stop_words)
+                      
+                      prob_message_lovecraft = 1
+                      prob_message_poe = 1
+                      prob_message_shelley= 1
+            
+                      for (wrd in new_splitted_mes$text) {
+                        
+                          word_prob_lovecraft <- ifelse(wrd %in% counter$word,
+                            counter %>% filter(word==wrd) %>% pull(Prob_word_given_Lovecraft),
+                            1/(total_author_amount_vector[1]+total_amount_of_unique_words))
+                          
+                          word_prob_poe <- ifelse(wrd %in% counter$word,
+                            counter %>% filter(word==wrd) %>% pull(Prob_word_given_Poe),
+                            1/(total_author_amount_vector[2]+total_amount_of_unique_words))
+                          
+                          word_prob_shelley <- ifelse(wrd %in% counter$word,
+                            counter %>% filter(word==wrd) %>% pull(Prob__word_given_Shelley),
+                            1/(total_author_amount_vector[3]+total_amount_of_unique_words))
+                          
+                        
+                      prob_message_lovecraft = prob_message_lovecraft * word_prob_lovecraft
+                      prob_message_poe = prob_message_poe * word_prob_poe
+                      prob_message_shelley= prob_message_shelley * word_prob_shelley
+                      
+                    }
+                      
+                      lst <- list(prob_message_lovecraft*prob_author_vector[1], prob_message_poe*prob_author_vector[2],
+                                prob_message_shelley*prob_author_vector[3])
+                      index <- which.max(lst)
+                      lst_authors <- list("HP Lovecraft", "Edgar Alan Poe", "Mary Wollstonecraft Shelley ")
+                      return(lst_authors[index])
+                    
+            }
+                    
+                    score = function(X_test, y_test){
+                      path = "data/0-authors/test.csv"
+                      data_from_file <- read.csv(path)
+                      data_from_file <- data_from_file[, (3:4)]
+                      for (i in 1:nrow(data_from_file)) {
+                        data_from_file[i, "predicted"] = naiveBayes()$predict(data_from_file$text[i])
+                        data_from_file[i, "result"] = ifelse(data_from_file$author[i] == data_from_file$predicted[i], 1, 0)
+                      }
+                      data_from_file
+                      
+                }
+                    
+))
+
+model = naiveBayes()
+model$fit()
+model$score()
+```
+
+## Measure effectiveness of your classifier
+```{r}
+accuracy_path = "data/0-authors/final_data_fr.csv"
+print(getwd())
+accur <- read.csv(accuracy_path)
+print("Effectiveness of our classifier =")
+print(sum(accur$result)/nrow(accur)*100)
+```
+
+## Conclusions
+
