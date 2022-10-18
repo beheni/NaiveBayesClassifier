@@ -104,7 +104,7 @@ counter[is.na(counter)]<-0
 naiveBayes <- setRefClass("naiveBayes",
        fields = list(),
        methods = list(
-                    fit = function(X, y){
+                    fit = function(){
                       total_author_amount_vector <<- c(sum(counter$Lovecraft), sum(counter$Poe), sum(counter$Shelley))
                       total_amount_of_unique_words <<- nrow(counter)
                       total_amount_of_unique_words
@@ -157,7 +157,7 @@ naiveBayes <- setRefClass("naiveBayes",
                     
             }
                     
-                    score = function(X_test, y_test){
+                    score = function(){
                       path = "data/0-authors/test.csv"
                       data_from_file <- read.csv(path)
                       data_from_file <- data_from_file[, (3:4)]
