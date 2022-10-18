@@ -139,7 +139,7 @@ naiveBayes <- setRefClass("naiveBayes",
                             1/(total_author_amount_vector[2]+total_amount_of_unique_words))
                           
                           word_prob_shelley <- ifelse(wrd %in% counter$word,
-                            counter %>% filter(word==wrd) %>% pull(Prob_word_given_Shelley),
+                            counter %>% filter(word==wrd) %>% pull(Prob__word_given_Shelley),
                             1/(total_author_amount_vector[3]+total_amount_of_unique_words))
                           
                         
@@ -155,7 +155,7 @@ naiveBayes <- setRefClass("naiveBayes",
                       lst_authors <- list("HP Lovecraft", "Edgar Alan Poe", "Mary Wollstonecraft Shelley ")
                       return(lst_authors[index])
                     
-            }
+            },
                     
                     score = function(){
                       path = "data/0-authors/test.csv"
@@ -262,6 +262,25 @@ print(getwd())
 accur <- read.csv(accuracy_path)
 print("Effectiveness of our classifier =")
 print(sum(accur$result)/nrow(accur)*100)
+
+
+fails <- subset(accur, result == 0)
+fails$len <- lengths(gregexpr("\\W+", fails$text))
+
+succ <- subset(accur, result == 1)
+succ$len <- lengths(gregexpr("\\W+", succ$text))
+
+average_fail_len = sum((fails$len)/nrow(accur))
+average_succ_len = sum((succ$len)/nrow(accur))
+
+print("The probability of successful classification depends on the message lenght")
+print("Average lenght of failed message =")
+average_fail_len
+
+print("Average lenght of successful message =")
+average_succ_len
+gr <- c(average_fail_len, average_succ_len)
+barplot(gr, ylab="Number of words", names.arg=c("Average lenght of failed message", "Average lenght of successful message"), border="blue")
 ```
 
 ## Conclusions
