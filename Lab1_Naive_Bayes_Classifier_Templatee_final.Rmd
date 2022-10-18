@@ -205,4 +205,12 @@ print(sum(accur$result)/nrow(accur)*100)
 ```
 
 ## Conclusions
+- We used Naive Bayes Classifier which uses Bayes's formula for conditional probability to determine the authorship of the given text excerpt
+- Pros of this approach:
+    The algoright is easy to understand and implement
+    We got pretty high accuracy (83%)
+    It can be used for both binary and multi-class classifications
+- Cons:
+    It assumes that all the features are independent. While it might sound great in theory, in real life, you’ll hardly find a set of independent features
+    We have to deal (by Laplace smoothing) with the problem when the word wasn't presented in train set so our probability equals to one
 
