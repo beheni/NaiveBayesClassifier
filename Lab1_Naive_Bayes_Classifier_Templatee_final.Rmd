@@ -139,7 +139,7 @@ naiveBayes <- setRefClass("naiveBayes",
                             1/(total_author_amount_vector[2]+total_amount_of_unique_words))
                           
                           word_prob_shelley <- ifelse(wrd %in% counter$word,
-                            counter %>% filter(word==wrd) %>% pull(Prob__word_given_Shelley),
+                            counter %>% filter(word==wrd) %>% pull(Prob_word_given_Shelley),
                             1/(total_author_amount_vector[3]+total_amount_of_unique_words))
                           
                         
