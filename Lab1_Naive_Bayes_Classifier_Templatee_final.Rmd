@@ -169,13 +169,13 @@ naiveBayes <- setRefClass("naiveBayes",
                       
                       # checker <- read.csv("data/0-authors/final_data_fr.csv")
                       
-                      edgar_data <- data_from_file %>% filter(author == "Edgar Alan Poe") %>% select(author, predicted, result)
+                      edgar_data <<- data_from_file %>% filter(author == "Edgar Alan Poe") %>% select(author, predicted, result)
                       edgar_prob = sum(edgar_data$result)/nrow(edgar_data)
                       
-                      mary_data <- data_from_file %>% filter(author == "Mary Wollstonecraft Shelley ") %>% select(author, predicted, result)
+                      mary_data <<- data_from_file %>% filter(author == "Mary Wollstonecraft Shelley ") %>% select(author, predicted, result)
                       mary_prob = sum(mary_data$result)/nrow(mary_data)
                       
-                      hp_data <- data_from_file %>% filter(author == "HP Lovecraft") %>% select(author, predicted, result)
+                      hp_data <<- data_from_file %>% filter(author == "HP Lovecraft") %>% select(author, predicted, result)
                       hp_prob = sum(hp_data$result)/nrow(mary_data)
                       
                       author <- c("HP Lovecraft", "Mary Wollstonecraft Shelley ", "Edgar Alan Poe")
@@ -193,6 +193,66 @@ naiveBayes <- setRefClass("naiveBayes",
 model = naiveBayes()
 model$fit()
 model$score()
+```
+
+## Summarizing mistakes
+```{r}
+
+mary_false_data <- mary_data %>% filter(result == 0 & author =="Mary Wollstonecraft Shelley ")
+
+hp_in_mary <<- 0
+edgar_in_mary <<- 0
+for (name in mary_false_data$predicted) {
+  if (name == "HP Lovecraft"){
+    hp_in_mary = hp_in_mary + 1
+  } else {
+    edgar_in_mary = edgar_in_mary + 1
+  }
+}
+print("Mistakes in Mary Wollstonecraft Shelley:")
+print(hp_in_mary + edgar_in_mary)
+print("Confused with HP Lovecraft:")
+print(hp_in_mary)
+print("Confused with Edgar Alan Poe:")
+print(edgar_in_mary)
+
+
+edgar_false_data <- edgar_data %>% filter(result == 0 & author =="Edgar Alan Poe")
+
+mary_in_edgar <<- 0
+hp_in_edgar <<- 0
+for (name in edgar_false_data$predicted) {
+  if (name == "HP Lovecraft"){
+    hp_in_edgar = hp_in_edgar + 1
+  } else {
+    mary_in_edgar = mary_in_edgar + 1
+  }
+}
+print("Mistakes in Edgar Alan Poe:")
+print(hp_in_edgar + mary_in_edgar)
+print("Confused with HP Lovecraft:")
+print(hp_in_edgar)
+print("Confused with Mary Wollstonecraft Shelley:")
+print(mary_in_edgar)
+
+hp_false_data <- hp_data %>% filter(result == 0 & author =="HP Lovecraft")
+
+mary_in_hp <<- 0
+edgar_in_hp <<- 0
+for (name in hp_false_data$predicted) {
+  if (name == "Edgar Alan Poe"){
+    edgar_in_hp = edgar_in_hp + 1
+  } else {
+    mary_in_hp = mary_in_hp + 1
+  }
+}
+print("Mistakes in HP Lovecraft:")
+print(mary_in_hp + edgar_in_hp)
+print("Confused with Edgar Alan Poe:")
+print(edgar_in_hp)
+print("Confused with Mary Wollstonecraft Shelley:")
+print(mary_in_hp)
+
 ```
 
 ## Measure effectiveness of your classifier
