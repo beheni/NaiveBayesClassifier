@@ -167,6 +167,25 @@ naiveBayes <- setRefClass("naiveBayes",
                       }
                       data_from_file
                       
+                      # checker <- read.csv("data/0-authors/final_data_fr.csv")
+                      
+                      edgar_data <- data_from_file %>% filter(author == "Edgar Alan Poe") %>% select(author, predicted, result)
+                      edgar_prob = sum(edgar_data$result)/nrow(edgar_data)
+                      
+                      mary_data <- data_from_file %>% filter(author == "Mary Wollstonecraft Shelley ") %>% select(author, predicted, result)
+                      mary_prob = sum(mary_data$result)/nrow(mary_data)
+                      
+                      hp_data <- data_from_file %>% filter(author == "HP Lovecraft") %>% select(author, predicted, result)
+                      hp_prob = sum(hp_data$result)/nrow(mary_data)
+                      
+                      author <- c("HP Lovecraft", "Mary Wollstonecraft Shelley ", "Edgar Alan Poe")
+                      probability <- c(hp_prob, mary_prob, edgar_prob)
+                      
+                      new_data <- data.frame(author, probability)
+                      new_data %>% 
+                        ggplot(aes(author, probability, colour = probability))+
+                        geom_bar(stat = "identity", aes(fill = probability))
+                      
                 }
                     
 ))
